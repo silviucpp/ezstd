@@ -51,8 +51,10 @@ CheckoutLib()
 
 BuildLibrary()
 {
-    fail_check cmake build/cmake/
     fail_check make -j 12
+    rm -rf lib/*.so
+    rm -rf lib/*.so.*
+    rm -rf lib/*.dylib
 }
 
 CheckoutLib $ZSTD_REPO $ZSTD_REV $ZSTD_BRANCH $ZSTD_DESTINATION $ZSTD_SUCCESS
