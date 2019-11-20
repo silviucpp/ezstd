@@ -51,6 +51,15 @@ CheckoutLib()
 
 BuildLibrary()
 {
+    case $OS in
+        Linux)
+            export CFLAGS="-fPIC"
+            export CXXFLAGS="-fPIC"
+            ;;
+        *)
+            ;;
+    esac
+
     fail_check make -j 12
     rm -rf lib/*.so
     rm -rf lib/*.so.*
