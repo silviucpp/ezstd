@@ -1,6 +1,8 @@
 #ifndef C_SRC_NIF_UTILS_H_
 #define C_SRC_NIF_UTILS_H_
 
+#include <stdint.h>
+
 #include "erl_nif.h"
 
 ERL_NIF_TERM make_atom(ErlNifEnv* env, const char* name);
