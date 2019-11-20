@@ -8,6 +8,8 @@ ezstd
 
 [Zstd][1] binding for Erlang
 
+This binding is based on zstd v1.4.4. In case you want to modify the zstd version you can change `ZSTD_REV` from `build_deps.sh`
+
 Usage
 -----
 
