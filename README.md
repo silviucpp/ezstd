@@ -4,7 +4,6 @@ ezstd
 [![Build Status](https://travis-ci.org/silviucpp/ezstd.svg?branch=master)](https://travis-ci.org/silviucpp/ezstd)
 ![GitHub](https://img.shields.io/github/license/silviucpp/ezstd)
 ![Hex.pm](https://img.shields.io/hexpm/v/ezstd)
-![Maintenance](https://img.shields.io/maintenance/yes/2019)
 
 [Zstd][1] binding for Erlang
 
