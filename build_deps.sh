@@ -10,7 +10,7 @@ KERNEL=$(echo $(lsb_release -ds 2>/dev/null || cat /etc/*release 2>/dev/null | h
 ZSTD_DESTINATION=zstd
 ZSTD_REPO=https://github.com/facebook/zstd.git
 ZSTD_BRANCH=master
-ZSTD_REV=10f0e6993f9d2f682da6d04aa2385b7d53cbb4ee
+ZSTD_REV=791626dfb92acf4a3d3ba0342636b0dd82848e01
 ZSTD_SUCCESS=lib/libzstd.a
 
 fail_check()
