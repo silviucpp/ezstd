@@ -11,7 +11,7 @@ CPUS=`getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu`
 ZSTD_DESTINATION=zstd
 ZSTD_REPO=https://github.com/facebook/zstd.git
 ZSTD_BRANCH=master
-ZSTD_TAG=v1.5.1
+ZSTD_TAG=v1.5.2
 ZSTD_SUCCESS=lib/libzstd.a
 
 fail_check()
