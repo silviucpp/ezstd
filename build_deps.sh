@@ -11,7 +11,7 @@ CPUS=`getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu`
 ZSTD_DESTINATION=zstd
 ZSTD_REPO=https://github.com/facebook/zstd.git
 ZSTD_BRANCH=master
-ZSTD_REV=791626dfb92acf4a3d3ba0342636b0dd82848e01
+ZSTD_TAG=v1.5.1
 ZSTD_SUCCESS=lib/libzstd.a
 
 fail_check()
@@ -31,7 +31,7 @@ CheckoutLib()
     else
         #repo rev branch destination
 
-        echo "repo=$1 rev=$2 branch=$3"
+        echo "repo=$1 tag=$2 branch=$3"
 
         mkdir -p $DEPS_LOCATION
         pushd $DEPS_LOCATION
@@ -67,4 +67,4 @@ BuildLibrary()
     rm -rf lib/*.dylib
 }
 
-CheckoutLib $ZSTD_REPO $ZSTD_REV $ZSTD_BRANCH $ZSTD_DESTINATION $ZSTD_SUCCESS
+CheckoutLib $ZSTD_REPO $ZSTD_TAG $ZSTD_BRANCH $ZSTD_DESTINATION $ZSTD_SUCCESS
