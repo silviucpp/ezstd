@@ -7,7 +7,7 @@ ezstd
 
 [Zstd][1] binding for Erlang
 
-This binding is based on zstd v1.5.1. In case you want to modify the zstd version you can change `ZSTD_REV` from `build_deps.sh`
+This binding is based on zstd v1.5.2. In case you want to modify the zstd version you can change `ZSTD_TAG` from `build_deps.sh`
 
 Usage
 -----
