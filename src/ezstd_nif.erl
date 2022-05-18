@@ -1,3 +1,4 @@
+%% @private
 -module(ezstd_nif).
 
 -define(NOT_LOADED, not_loaded(?LINE)).
