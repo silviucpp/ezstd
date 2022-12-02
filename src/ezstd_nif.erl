@@ -7,7 +7,15 @@
 
 -export([
     compress/2,
-    decompress/1
+    decompress/1,
+    create_cdict/2,
+    create_ddict/1,
+    compress_using_cdict/2,
+    decompress_using_ddict/2,
+    get_dict_id_from_cdict/1,
+    get_dict_id_from_ddict/1,
+    get_dict_id_from_frame/1
+
 ]).
 
 %% nif functions
@@ -33,4 +41,25 @@ compress(_Binary, _CompressionLevel) ->
     ?NOT_LOADED.
 
 decompress(_Binary) ->
+    ?NOT_LOADED.
+
+create_cdict(_Binary, _CompressionLevel) ->
+    ?NOT_LOADED.
+
+create_ddict(_Binary) ->
+    ?NOT_LOADED.
+
+compress_using_cdict(_Binary, _CCDict) ->
+    ?NOT_LOADED.
+
+decompress_using_ddict(_Binary, _DDict) ->
+    ?NOT_LOADED.
+
+get_dict_id_from_cdict(_CDict) ->
+    ?NOT_LOADED.
+
+get_dict_id_from_ddict(_DDict) ->
+    ?NOT_LOADED.
+
+get_dict_id_from_frame(_Binary) ->
     ?NOT_LOADED.
