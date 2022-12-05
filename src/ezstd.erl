@@ -17,11 +17,11 @@
     get_dict_id_from_cdict/1
 ]).
 
--spec create_cdict(binary(), integer()) -> reference().
+-spec create_cdict(binary(), integer()) -> reference() | {error, any()}.
 create_cdict(Binary, CompressionLevel) ->
     ezstd_nif:create_cdict(Binary, CompressionLevel).
 
--spec create_ddict(binary()) -> reference().
+-spec create_ddict(binary()) -> reference() | {error, any()}.
 create_ddict(Binary) ->
     ezstd_nif:create_ddict(Binary). 
 
@@ -33,15 +33,15 @@ compress_using_cdict(Binary, CCDict) ->
 decompress_using_ddict(Binary, DDict) ->
   ezstd_nif:decompress_using_ddict(Binary, DDict).
 
--spec get_dict_id_from_frame(binary()) -> integer().
+-spec get_dict_id_from_frame(binary()) -> integer() | {error, any()}.
 get_dict_id_from_frame(Binary) ->
     ezstd_nif:get_dict_id_from_frame(Binary).
 
--spec get_dict_id_from_ddict(reference()) -> integer().
+-spec get_dict_id_from_ddict(reference()) -> integer() | {error, any()}.
 get_dict_id_from_ddict(DDict) ->
     ezstd_nif:get_dict_id_from_ddict(DDict).
 
--spec get_dict_id_from_cdict(reference()) -> integer().
+-spec get_dict_id_from_cdict(reference()) -> integer() | {error, any()}.
 get_dict_id_from_cdict(CDict) ->
     ezstd_nif:get_dict_id_from_cdict(CDict).
 
