@@ -31,19 +31,19 @@ compress_using_cdict(Binary, CCDict) ->
 
 -spec decompress_using_ddict(binary(), reference()) -> binary() | {error, any()}.
 decompress_using_ddict(Binary, DDict) ->
-  ezstd_nif:decompress_using_ddict(Binary, DDict).
+    ezstd_nif:decompress_using_ddict(Binary, DDict).
 
--spec get_dict_id_from_frame(binary()) -> integer() | {error, any()}.
+-spec get_dict_id_from_frame(binary()) -> integer().
 get_dict_id_from_frame(Binary) ->
-    ezstd_nif:get_dict_id_from_frame(Binary).
+    returns_integers(ezstd_nif:get_dict_id_from_frame(Binary)).
 
--spec get_dict_id_from_ddict(reference()) -> integer() | {error, any()}.
+-spec get_dict_id_from_ddict(reference()) -> integer().
 get_dict_id_from_ddict(DDict) ->
-    ezstd_nif:get_dict_id_from_ddict(DDict).
+    returns_integers(ezstd_nif:get_dict_id_from_ddict(DDict)).
 
--spec get_dict_id_from_cdict(reference()) -> integer() | {error, any()}.
+-spec get_dict_id_from_cdict(reference()) -> integer().
 get_dict_id_from_cdict(CDict) ->
-    ezstd_nif:get_dict_id_from_cdict(CDict).
+    returns_integers(ezstd_nif:get_dict_id_from_cdict(CDict)).
 
 
 %% @doc Compresses the given binary.
@@ -60,3 +60,16 @@ compress(Binary, CompressionLevel) ->
 -spec decompress(binary()) -> binary() | {error, any()}.
 decompress(Binary) ->
     ezstd_nif:decompress(Binary).
+
+returns_integers(Value) ->
+    % the _dict_id functions only return non-integers when
+    % the preconditions are broken. ie: non-binary or non-reference
+    % supplied as an argument
+    % in the case of frame it returns 0 if the frame has no
+    % dict_id
+    case Value of
+        V when is_integer(V) ->
+            V;
+        Other ->
+            error(Other)
+    end.
