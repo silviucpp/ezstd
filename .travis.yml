@@ -40,3 +40,6 @@ before_script:
 
 script:
     - ./rebar3 compile
+
+after_success:
+  - ./rebar3 ct
