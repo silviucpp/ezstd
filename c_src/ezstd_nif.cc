@@ -14,6 +14,17 @@ atoms ATOMS;
 ErlNifResourceType *COMPRESS_DICTIONARY_RES_TYPE;
 ErlNifResourceType *DECOMPRESS_DICTIONARY_RES_TYPE;
 
+struct ZSTDCCtxDeleter {
+  void operator()(ZSTD_CCtx* ctx) {
+    ZSTD_freeCCtx(ctx);
+  }
+};
+
+struct ZSTDDCtxDeleter {
+  void operator()(ZSTD_DCtx* ctx) {
+    ZSTD_freeDCtx(ctx);
+  }
+};
 
 void zstd_nif_compress_dictionary_destructor(ErlNifEnv *env, void *res) {
   UNUSED(env);
@@ -89,11 +100,13 @@ static ERL_NIF_TERM zstd_nif_compress_using_cdict(ErlNifEnv* env, int argc, cons
     size_t out_buffer_size = ZSTD_compressBound(bin.size);
     std::unique_ptr<uint8_t[]> out_buffer(new uint8_t[out_buffer_size]);
 
-    ZSTD_CCtx* ctx = ZSTD_createCCtx();
+    std::unique_ptr<ZSTD_CCtx, ZSTDCCtxDeleter> ctx {ZSTD_createCCtx()};
 
-    size_t compressed_size = ZSTD_compress_usingCDict(ctx, out_buffer.get(), out_buffer_size, bin.data, bin.size, *dict_resource);
+    if (!ctx) {
+      return make_error(env, "failed to alloc");
+    }
 
-    ZSTD_freeCCtx(ctx);
+    size_t compressed_size = ZSTD_compress_usingCDict(ctx.get(), out_buffer.get(), out_buffer_size, bin.data, bin.size, *dict_resource);
 
     if(ZSTD_isError(compressed_size)) {
         return make_error(env, "failed to compress");
@@ -114,16 +127,18 @@ static ERL_NIF_TERM zstd_nif_decompress_using_ddict(ErlNifEnv* env, int argc, co
     }
 
 
-    ZSTD_DCtx* ctx = ZSTD_createDCtx();
+    std::unique_ptr<ZSTD_DCtx, ZSTDDCtxDeleter> ctx {ZSTD_createDCtx()};
+
+    if (!ctx) {
+      return make_error(env, "failed to alloc");
+    }
 
     uint64_t uncompressed_size = ZSTD_getDecompressedSize(bin.data, bin.size);
 
     ERL_NIF_TERM out_term;
     uint8_t *destination_buffer = enif_make_new_binary(env, uncompressed_size, &out_term);
 
-    size_t actual_decompressed_size = ZSTD_decompress_usingDDict(ctx, destination_buffer, uncompressed_size, bin.data, bin.size, *dict_resource);
-
-    ZSTD_freeDCtx(ctx);
+    size_t actual_decompressed_size = ZSTD_decompress_usingDDict(ctx.get(), destination_buffer, uncompressed_size, bin.data, bin.size, *dict_resource);
 
     if (actual_decompressed_size != uncompressed_size) {
         return make_error(env, "failed to decompress");
@@ -154,11 +169,8 @@ static ERL_NIF_TERM zstd_nif_create_cdict(ErlNifEnv* env, int argc, const ERL_NI
       return make_error(env, "failed to create cdict");
     }
 
+    /* enif_alloc_resource cannot fail: https://github.com/erlang/otp/blob/df484d244705180def80fae22cba747d3e5bfdb1/erts/emulator/beam/erl_nif.c#L3029 */
     ZSTD_CDict** resource = static_cast<ZSTD_CDict**>(enif_alloc_resource(COMPRESS_DICTIONARY_RES_TYPE, sizeof(ZSTD_CDict*)));
-    if (resource == nullptr) {
-      ZSTD_freeCDict(dict);
-      return make_error(env, "failed to create resource");
-    }
 
     *resource = dict;
 
@@ -187,11 +199,8 @@ static ERL_NIF_TERM zstd_nif_create_ddict(ErlNifEnv* env, int argc, const ERL_NI
       return make_error(env, "failed to create cdict");
     }
 
+    /* enif_alloc_resource cannot fail */
     ZSTD_DDict** resource = static_cast<ZSTD_DDict**>(enif_alloc_resource(DECOMPRESS_DICTIONARY_RES_TYPE, sizeof(ZSTD_DDict*)));
-    if (resource == nullptr) {
-      ZSTD_freeDDict(dict);
-      return make_error(env, "failed to create resource");
-    }
 
     *resource = dict;
 
