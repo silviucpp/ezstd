@@ -57,6 +57,9 @@ BuildLibrary()
             export CFLAGS="-fPIC"
             export CXXFLAGS="-fPIC"
             ;;
+        Darwin)
+            export LD_FLAGS="-lz"
+            ;;
         *)
             ;;
     esac
