@@ -133,7 +133,7 @@ static ERL_NIF_TERM zstd_nif_decompress_using_ddict(ErlNifEnv* env, int argc, co
       return make_error(env, "failed to alloc");
     }
 
-    uint64_t uncompressed_size = ZSTD_getDecompressedSize(bin.data, bin.size);
+    uint64_t uncompressed_size = ZSTD_getFrameContentSize(bin.data, bin.size);
 
     ERL_NIF_TERM out_term;
     uint8_t *destination_buffer = enif_make_new_binary(env, uncompressed_size, &out_term);
@@ -257,7 +257,7 @@ static ERL_NIF_TERM zstd_nif_decompress(ErlNifEnv* env, int argc, const ERL_NIF_
     if(!enif_inspect_binary(env, argv[0], &bin))
         return make_badarg(env);
 
-    uint64_t uncompressed_size = ZSTD_getDecompressedSize(bin.data, bin.size);
+    uint64_t uncompressed_size = ZSTD_getFrameContentSize(bin.data, bin.size);
 
     ERL_NIF_TERM out_term;
     uint8_t *destination_buffer = enif_make_new_binary(env, uncompressed_size, &out_term);
