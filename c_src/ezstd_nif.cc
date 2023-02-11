@@ -135,6 +135,14 @@ static ERL_NIF_TERM zstd_nif_decompress_using_ddict(ErlNifEnv* env, int argc, co
 
     uint64_t uncompressed_size = ZSTD_getFrameContentSize(bin.data, bin.size);
 
+    if (uncompressed_size == ZSTD_CONTENTSIZE_UNKNOWN) {
+        return make_error(env, "failed to decompress: ZSTD_CONTENTSIZE_UNKNOWN");
+    }
+
+    if (uncompressed_size == ZSTD_CONTENTSIZE_ERROR) {
+        return make_error(env, "failed to decompress: ZSTD_CONTENTSIZE_ERROR");
+    }
+
     ERL_NIF_TERM out_term;
     uint8_t *destination_buffer = enif_make_new_binary(env, uncompressed_size, &out_term);
 
@@ -253,17 +261,26 @@ static ERL_NIF_TERM zstd_nif_decompress(ErlNifEnv* env, int argc, const ERL_NIF_
     UNUSED(argc);
 
     ErlNifBinary bin;
-    
+
     if(!enif_inspect_binary(env, argv[0], &bin))
         return make_badarg(env);
 
     uint64_t uncompressed_size = ZSTD_getFrameContentSize(bin.data, bin.size);
 
+    if (uncompressed_size == ZSTD_CONTENTSIZE_UNKNOWN) {
+        return make_error(env, "failed to decompress: ZSTD_CONTENTSIZE_UNKNOWN");
+    }
+
+    if (uncompressed_size == ZSTD_CONTENTSIZE_ERROR) {
+        return make_error(env, "failed to decompress: ZSTD_CONTENTSIZE_ERROR");
+    }
+
     ERL_NIF_TERM out_term;
     uint8_t *destination_buffer = enif_make_new_binary(env, uncompressed_size, &out_term);
 
-    if(ZSTD_decompress(destination_buffer, uncompressed_size, bin.data, bin.size) != uncompressed_size)
+    if (ZSTD_decompress(destination_buffer, uncompressed_size, bin.data, bin.size) != uncompressed_size) {
         return make_error(env, "failed to decompress");
+    }
 
     return out_term;
 }
