@@ -7,7 +7,8 @@
 all() -> [
     roundtrip_content_dictionary_test,
     roundtrip_content_using_real_dictionary_test,
-    roundtrip_normal_compression_test
+    roundtrip_normal_compression_test,
+    roundtrip_with_streaming_compress_test
 ].
 
 roundtrip_normal_compression_test(_) ->
@@ -38,6 +39,34 @@ roundtrip_content_using_real_dictionary_test(_) ->
   DictCompressed = ezstd:compress_using_cdict(Plaintext, CDict),
   ?assertEqual(967448963, ezstd:get_dict_id_from_frame(DictCompressed)),
   ?assertEqual(Plaintext, ezstd:decompress_using_ddict(DictCompressed, DDict)).
+
+roundtrip_with_streaming_compress_test(_) ->
+  Dict = real_dictionary(),
+  CDict = ezstd:create_cdict(Dict, 10),
+  DDict = ezstd:create_ddict(Dict),
+
+  CContext = ezstd:create_compression_context(512),
+  ?assertEqual(ok, ezstd:select_cdict(CContext, CDict)),
+  Plaintext = <<"contentcontentcontentcontent">>,
+ 
+  CompressedIOList = ezstd:compress_streaming(CContext, Plaintext),
+  CompressedBinary = erlang:iolist_to_binary(CompressedIOList),
+  
+  DContext = ezstd:create_decompression_context(1024),
+  ?assertEqual(ok, ezstd:select_ddict(DContext, DDict)),
+
+  RehydratedIOList = ezstd:decompress_streaming(DContext, CompressedBinary),
+  RehydratedBinary = erlang:iolist_to_binary(RehydratedIOList),
+  ?assertEqual(Plaintext, RehydratedBinary),
+
+  SecondPlaintext = <<"morecontentmorecontentmorecontentmorecontent">>,
+  SecondBinary = erlang:iolist_to_binary(ezstd:compress_streaming(CContext, SecondPlaintext)),
+  ?assertEqual(SecondPlaintext, erlang:iolist_to_binary(ezstd:decompress_streaming(DContext, SecondBinary))),
+
+  ?assertEqual({error, <<"corrupted data">>}, ezstd:decompress_streaming(DContext, <<"this is not a compressed text">>)).
+
+
+
 
 % internals
 

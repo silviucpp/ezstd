@@ -14,7 +14,13 @@
     decompress_using_ddict/2,
     get_dict_id_from_frame/1,
     get_dict_id_from_ddict/1,
-    get_dict_id_from_cdict/1
+    get_dict_id_from_cdict/1,
+    create_compression_context/1,
+    select_cdict/2,
+    compress_streaming/2,
+    create_decompression_context/1,
+    select_ddict/2,
+    decompress_streaming/2
 ]).
 
 -spec create_cdict(binary(), integer()) -> reference() | {error, any()}.
@@ -60,6 +66,62 @@ compress(Binary, CompressionLevel) ->
 -spec decompress(binary()) -> binary() | {error, any()}.
 decompress(Binary) ->
     ezstd_nif:decompress(Binary).
+
+%% @doc Create a streaming compression context, with a buffer of the given size.
+-spec create_compression_context(pos_integer()) -> reference() | {error, any()}.
+create_compression_context(BufferSize) ->
+    ezstd_nif:create_compression_context(BufferSize).
+
+%% @doc Set a dictionary for the given streaming compression context. Must be called
+%% before beginning compression.
+-spec select_cdict(reference(), reference()) -> ok | {error, any()}.
+select_cdict(Context, CDict) ->
+    ezstd_nif:select_cdict(Context, CDict).
+
+%% @doc Compress some data without closing out the compression frame. This
+%% is intended to be used by a streaming decompressor which receives the same
+%% data in the same order.
+-spec compress_streaming(reference(), binary()) -> iolist() | {error, any()}.
+compress_streaming(Context, Binary) ->
+    compress_streaming_chunk(Context, Binary, 0, []).
+
+compress_streaming_chunk(Context, Binary, Offset, Sofar) ->
+    case ezstd_nif:compress_streaming_chunk(Context, Binary, Offset) of
+        {ok, Chunk} ->
+            [Sofar | Chunk];
+        {continue, Chunk, NextOffset} ->
+            compress_streaming_chunk(Context, Binary, NextOffset, [Sofar | Chunk]);
+        Error ->
+            Error
+    end.
+
+%% @doc Create a streaming decompression context, with a buffer of the given size.
+-spec create_decompression_context(pos_integer()) -> reference() | {error, any()}.
+create_decompression_context(BufferSize) ->
+    ezstd_nif:create_decompression_context(BufferSize).
+
+%% @doc Set a dictionary for the given streaming decompression context. Must be called
+%% before beginning decompression.
+-spec select_ddict(reference(), reference()) -> ok | {error, any()}.
+select_ddict(Context, DDict) ->
+    ezstd_nif:select_ddict(Context, DDict).
+
+%% @doc Compress some data without closing out the compression frame. This
+%% is intended to be used by a streaming decompressor which receives the same
+%% data in the same order.
+-spec decompress_streaming(reference(), binary()) -> iolist() | {error, any()}.
+decompress_streaming(Context, Binary) ->
+    decompress_streaming_chunk(Context, Binary, 0, []).
+
+decompress_streaming_chunk(Context, Binary, Offset, Sofar) ->
+    case ezstd_nif:decompress_streaming_chunk(Context, Binary, Offset) of
+        {ok, Chunk} ->
+            [Sofar | Chunk];
+        {continue, Chunk, NextOffset} ->
+            decompress_streaming_chunk(Context, Binary, NextOffset, [Sofar | Chunk]);
+        Error ->
+            Error
+    end.
 
 returns_integers(Value) ->
     % the _dict_id functions only return non-integers when
