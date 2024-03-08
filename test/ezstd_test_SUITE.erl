@@ -45,14 +45,14 @@ roundtrip_with_streaming_compress_test(_) ->
   CDict = ezstd:create_cdict(Dict, 10),
   DDict = ezstd:create_ddict(Dict),
 
-  CContext = ezstd:create_compression_context(512),
+  CContext = ezstd:create_compression_context(10),
   ?assertEqual(ok, ezstd:select_cdict(CContext, CDict)),
-  Plaintext = <<"contentcontentcontentcontent">>,
+  Plaintext = <<"contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent">>,
  
   CompressedIOList = ezstd:compress_streaming(CContext, Plaintext),
   CompressedBinary = erlang:iolist_to_binary(CompressedIOList),
   
-  DContext = ezstd:create_decompression_context(1024),
+  DContext = ezstd:create_decompression_context(10),
   ?assertEqual(ok, ezstd:select_ddict(DContext, DDict)),
 
   RehydratedIOList = ezstd:decompress_streaming(DContext, CompressedBinary),

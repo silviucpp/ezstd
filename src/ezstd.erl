@@ -83,14 +83,17 @@ select_cdict(Context, CDict) ->
 %% data in the same order.
 -spec compress_streaming(reference(), binary()) -> iolist() | {error, any()}.
 compress_streaming(Context, Binary) ->
-    compress_streaming_chunk(Context, Binary, 0, []).
+    compress_streaming_chunk(Context, Binary, 0, [], 1000).
 
-compress_streaming_chunk(Context, Binary, Offset, Sofar) ->
+compress_streaming_chunk(_Context, _Binary, _Offset, _Sofar, 0) ->
+    {error, compressor_stuck};
+
+compress_streaming_chunk(Context, Binary, Offset, Sofar, Attempts) ->
     case ezstd_nif:compress_streaming_chunk(Context, Binary, Offset) of
         {ok, Chunk} ->
             [Sofar | Chunk];
         {continue, Chunk, NextOffset} ->
-            compress_streaming_chunk(Context, Binary, NextOffset, [Sofar | Chunk]);
+            compress_streaming_chunk(Context, Binary, NextOffset, [Sofar | Chunk], Attempts - 1);
         Error ->
             Error
     end.
@@ -111,14 +114,17 @@ select_ddict(Context, DDict) ->
 %% data in the same order.
 -spec decompress_streaming(reference(), binary()) -> iolist() | {error, any()}.
 decompress_streaming(Context, Binary) ->
-    decompress_streaming_chunk(Context, Binary, 0, []).
+    decompress_streaming_chunk(Context, Binary, 0, [], 1000).
 
-decompress_streaming_chunk(Context, Binary, Offset, Sofar) ->
+decompress_streaming_chunk(_Context, _Binary, _Offset, _Sofar, 0) ->
+    {error, decompressor_stuck};
+
+decompress_streaming_chunk(Context, Binary, Offset, Sofar, Attempts) ->
     case ezstd_nif:decompress_streaming_chunk(Context, Binary, Offset) of
         {ok, Chunk} ->
             [Sofar | Chunk];
         {continue, Chunk, NextOffset} ->
-            decompress_streaming_chunk(Context, Binary, NextOffset, [Sofar | Chunk]);
+            decompress_streaming_chunk(Context, Binary, NextOffset, [Sofar | Chunk], Attempts - 1);
         Error ->
             Error
     end.

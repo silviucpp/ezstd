@@ -422,15 +422,19 @@ static ERL_NIF_TERM zstd_nif_compress_streaming_chunk(ErlNifEnv* env, int argc, 
     ERL_NIF_TERM result_chunk;
     unsigned char* result_buffer = enif_make_new_binary(env, ctx_resource->out.pos, &result_chunk);
     memcpy(result_buffer, ctx_resource->out.dst, ctx_resource->out.pos);
-
-    if (result == 0) {
+    
+    bool made_forward_progress = in_buffer.pos > offset || ctx_resource->out.pos > 0;
+    bool fully_processed_input = in_buffer.pos == in_buffer.size;
+    if (result == 0 || (!made_forward_progress && fully_processed_input)) {
         return enif_make_tuple2(env, ATOMS.atomOk, result_chunk);
-    } else {
-        if (in_buffer.pos == offset) {
+    } else if (result > 0) {
+        if (!fully_processed_input && !made_forward_progress) {
             return make_error(env, "compressor stuck");
         }
         ERL_NIF_TERM new_offset = enif_make_uint(env, in_buffer.pos);
         return enif_make_tuple3(env, ATOMS.atomContinue, result_chunk, new_offset);
+    } else {
+        return make_badarg(env);
     }
 }
 
@@ -465,10 +469,13 @@ static ERL_NIF_TERM zstd_nif_decompress_streaming_chunk(ErlNifEnv* env, int argc
     unsigned char* result_buffer = enif_make_new_binary(env, ctx_resource->out.pos, &result_chunk);
     memcpy(result_buffer, ctx_resource->out.dst, ctx_resource->out.pos);
 
-    if (result == 0 || in_buffer.pos == in_buffer.size) {
+
+    bool made_forward_progress = in_buffer.pos > offset || ctx_resource->out.pos > 0;
+    bool fully_processed_input = in_buffer.pos == in_buffer.size;
+    if (result == 0 || (!made_forward_progress && fully_processed_input)) {
         return enif_make_tuple2(env, ATOMS.atomOk, result_chunk);
     } else if (result > 0) {
-        if (in_buffer.pos == offset) {
+        if (!fully_processed_input && !made_forward_progress) {
             return make_error(env, "corrupted data");
         }
         ERL_NIF_TERM new_offset = enif_make_uint(env, in_buffer.pos);
