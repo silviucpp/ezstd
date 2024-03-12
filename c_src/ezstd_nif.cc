@@ -265,6 +265,46 @@ static ERL_NIF_TERM zstd_nif_select_ddict(ErlNifEnv* env, int argc, const ERL_NI
     return ATOMS.atomOk;
 }
 
+static ERL_NIF_TERM zstd_nif_set_compression_parameter(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UNUSED(argc);
+
+    ZstdCCtxWithBuffer* ctx_resource;
+    ZSTD_cParameter param_id;
+    int value;
+    if(!enif_get_resource(env, argv[0], COMPRESS_CONTEXT_RES_TYPE, reinterpret_cast<void**>(&ctx_resource)) ||
+       !enif_get_int(env, argv[1], reinterpret_cast<int*>(&param_id)) ||
+       !enif_get_int(env, argv[2], &value)) {
+        return make_badarg(env);
+    }
+
+    size_t result = ZSTD_CCtx_setParameter(ctx_resource->cctx, param_id, value);
+    if (ZSTD_isError(result)) {
+        return make_badarg(env);
+    }
+    return ATOMS.atomOk;
+}
+
+static ERL_NIF_TERM zstd_nif_set_decompression_parameter(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UNUSED(argc);
+
+    ZstdDCtxWithBuffer* ctx_resource;
+    ZSTD_dParameter param_id;
+    int value;
+    if(!enif_get_resource(env, argv[0], DECOMPRESS_CONTEXT_RES_TYPE, reinterpret_cast<void**>(&ctx_resource)) ||
+       !enif_get_int(env, argv[1], reinterpret_cast<int*>(&param_id)) ||
+       !enif_get_int(env, argv[2], &value)) {
+        return make_badarg(env);
+    }
+
+    size_t result = ZSTD_DCtx_setParameter(ctx_resource->dctx, param_id, value);
+    if (ZSTD_isError(result)) {
+        return make_badarg(env);
+    }
+    return ATOMS.atomOk;
+}
+
 static ERL_NIF_TERM zstd_nif_decompress_using_ddict(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     UNUSED(argc);
@@ -543,6 +583,8 @@ static ErlNifFunc nif_funcs[] = {
     {"create_decompression_context", 1, zstd_nif_create_decompression_context},
     {"select_cdict", 2, zstd_nif_select_cdict},
     {"select_ddict", 2, zstd_nif_select_ddict},
+    {"set_compression_parameter", 3, zstd_nif_set_compression_parameter},
+    {"set_decompression_parameter", 3, zstd_nif_set_decompression_parameter},
     {"compress_streaming_chunk", 3, zstd_nif_compress_streaming_chunk},
     {"decompress_streaming_chunk", 3, zstd_nif_decompress_streaming_chunk}
 };

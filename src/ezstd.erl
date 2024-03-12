@@ -17,11 +17,17 @@
     get_dict_id_from_cdict/1,
     create_compression_context/1,
     select_cdict/2,
+    set_compression_parameter/3,
     compress_streaming/2,
     create_decompression_context/1,
+    set_decompression_parameter/3,
     select_ddict/2,
     decompress_streaming/2
 ]).
+
+-type zstd_compression_flag() :: 'zstd_c_compression_level' | 'zstd_c_window_log'.
+
+-type zstd_decompression_flag() :: 'zstd_d_window_log_max'.
 
 -spec create_cdict(binary(), integer()) -> reference() | {error, any()}.
 create_cdict(Binary, CompressionLevel) ->
@@ -78,6 +84,17 @@ create_compression_context(BufferSize) ->
 select_cdict(Context, CDict) ->
     ezstd_nif:select_cdict(Context, CDict).
 
+%% @doc Set a compression parameter on the given compression context. Valid values for
+%% flag are zstd_c_compression_level and zstd_c_window_log.
+- spec set_compression_parameter(reference(), zstd_compression_flag(), integer()) -> ok | {error, any()}.
+set_compression_parameter(Context, Flag, Value) ->
+    case flag_to_compression_param_number(Flag) of
+        {ok, Param} -> 
+            ezstd_nif:set_compression_parameter(Context, Param, Value);
+        error -> 
+            error
+    end.
+
 %% @doc Compress some data without closing out the compression frame. This
 %% is intended to be used by a streaming decompressor which receives the same
 %% data in the same order.
@@ -108,6 +125,17 @@ create_decompression_context(BufferSize) ->
 -spec select_ddict(reference(), reference()) -> ok | {error, any()}.
 select_ddict(Context, DDict) ->
     ezstd_nif:select_ddict(Context, DDict).
+
+%% @doc Set a decompression parameter on the given compression context. The only valid
+%% value for Flag is zstd_d_window_log_max.
+- spec set_decompression_parameter(reference(), zstd_decompression_flag(), integer()) -> ok | {error, any()}.
+set_decompression_parameter(Context, Flag, Value) ->
+    case flag_to_decompression_param_number(Flag) of
+        {ok, Param} ->
+            ezstd_nif:set_decompression_parameter(Context, Param, Value);
+        error ->
+            error
+    end.
 
 %% @doc Compress some data without closing out the compression frame. This
 %% is intended to be used by a streaming decompressor which receives the same
@@ -141,3 +169,10 @@ returns_integers(Value) ->
         Other ->
             error(Other)
     end.
+
+flag_to_compression_param_number(zstd_c_compression_level) -> {ok, 100};
+flag_to_compression_param_number(zstd_c_window_log) -> {ok, 101};
+flag_to_compression_param_number(_Other) -> {error, badarg}.
+
+flag_to_decompression_param_number(zstd_d_window_log_max) -> {ok, 100};
+flag_to_decompression_param_number(_Other) -> {error, badarg}.
