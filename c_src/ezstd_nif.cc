@@ -4,8 +4,10 @@
 
 #include <stdlib.h>
 #include <memory>
-#include <zstd.h>
 #include <string.h>
+
+#define ZSTD_STATIC_LINKING_ONLY
+#include <zstd.h>
 
 #define MAX_BUFFER_SIZE (1<<30)
 
@@ -59,14 +61,28 @@ void zstd_nif_compression_context_destructor(ErlNifEnv *env, void *res) {
     UNUSED(env);
     ZstdCCtxWithBuffer* ctx_resource = static_cast<ZstdCCtxWithBuffer*>(res);
     ZSTD_freeCCtx(ctx_resource->cctx);
-    free(ctx_resource->out.dst);
+    enif_free(ctx_resource->out.dst);
 }
 
 void zstd_nif_decompression_context_destructor(ErlNifEnv *env, void *res) {
     UNUSED(env);
     ZstdDCtxWithBuffer* ctx_resource = static_cast<ZstdDCtxWithBuffer*>(res);
     ZSTD_freeDCtx(ctx_resource->dctx);
-    free(ctx_resource->out.dst);
+    enif_free(ctx_resource->out.dst);
+}
+
+void* zstd_nif_malloc(void *unused, size_t size) {
+    UNUSED(unused);
+    return enif_alloc(size);
+}
+
+void zstd_nif_free(void *unused, void *address) {
+    UNUSED(unused);
+    enif_free(address);
+}
+
+static ZSTD_customMem get_enif_zstd_allocator() {
+    return ZSTD_customMem({zstd_nif_malloc, zstd_nif_free, nullptr});
 }
 
 int on_nif_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
@@ -136,7 +152,7 @@ static ERL_NIF_TERM zstd_nif_compress_using_cdict(ErlNifEnv* env, int argc, cons
     size_t out_buffer_size = ZSTD_compressBound(bin.size);
     std::unique_ptr<uint8_t[]> out_buffer(new uint8_t[out_buffer_size]);
 
-    std::unique_ptr<ZSTD_CCtx, ZSTDCCtxDeleter> ctx {ZSTD_createCCtx()};
+    std::unique_ptr<ZSTD_CCtx, ZSTDCCtxDeleter> ctx {ZSTD_createCCtx_advanced(get_enif_zstd_allocator())};
 
     if (!ctx) {
       return make_error(env, "failed to alloc");
@@ -165,12 +181,12 @@ static ERL_NIF_TERM zstd_nif_create_compression_context(ErlNifEnv* env, int argc
         return make_badarg(env);
     }
 
-    ZSTD_CCtx* context = ZSTD_createCCtx();
+    ZSTD_CCtx* context = ZSTD_createCCtx_advanced(get_enif_zstd_allocator());
     if (!context) {
         return make_error(env, "unable to create context");
     }
 
-    void* buffer = malloc(out_buffer_size);
+    void* buffer = enif_alloc(out_buffer_size);
     if (!buffer) {
         ZSTD_freeCCtx(context);
         return make_error(env, "unable to create buffer");
@@ -202,12 +218,12 @@ static ERL_NIF_TERM zstd_nif_create_decompression_context(ErlNifEnv* env, int ar
         return make_badarg(env);
     }
 
-    ZSTD_DCtx* context = ZSTD_createDCtx();
+    ZSTD_DCtx* context = ZSTD_createDCtx_advanced(get_enif_zstd_allocator());
     if (!context) {
         return make_error(env, "unable to create context");
     }
 
-    void* buffer = malloc(out_buffer_size);
+    void* buffer = enif_alloc(out_buffer_size);
     if (!buffer) {
         ZSTD_freeDCtx(context);
         return make_error(env, "unable to create buffer");
@@ -317,7 +333,7 @@ static ERL_NIF_TERM zstd_nif_decompress_using_ddict(ErlNifEnv* env, int argc, co
     }
 
 
-    std::unique_ptr<ZSTD_DCtx, ZSTDDCtxDeleter> ctx {ZSTD_createDCtx()};
+    std::unique_ptr<ZSTD_DCtx, ZSTDDCtxDeleter> ctx {ZSTD_createDCtx_advanced(get_enif_zstd_allocator())};
 
     if (!ctx) {
       return make_error(env, "failed to alloc");

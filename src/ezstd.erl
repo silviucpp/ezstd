@@ -25,7 +25,14 @@
     decompress_streaming/2
 ]).
 
--type zstd_compression_flag() :: 'zstd_c_compression_level' | 'zstd_c_window_log'.
+-type zstd_compression_flag() :: 'zstd_c_compression_level' 
+      | 'zstd_c_window_log'
+      | 'zstd_c_hash_log'
+      | 'zstd_c_chain_log'
+      | 'zstd_c_search_log'
+      | 'zstd_c_min_match'
+      | 'zstd_c_target_length'
+      | 'zstd_c_strategy'.
 
 -type zstd_decompression_flag() :: 'zstd_d_window_log_max'.
 
@@ -172,6 +179,12 @@ returns_integers(Value) ->
 
 flag_to_compression_param_number(zstd_c_compression_level) -> {ok, 100};
 flag_to_compression_param_number(zstd_c_window_log) -> {ok, 101};
+flag_to_compression_param_number(zstd_c_hash_log) -> {ok, 102};
+flag_to_compression_param_number(zstd_c_chain_log) -> {ok, 103};
+flag_to_compression_param_number(zstd_c_search_log) -> {ok, 104};
+flag_to_compression_param_number(zstd_c_min_match) -> {ok, 105};
+flag_to_compression_param_number(zstd_c_target_length) -> {ok, 106};
+flag_to_compression_param_number(zstd_c_strategy) -> {ok, 107};
 flag_to_compression_param_number(_Other) -> {error, badarg}.
 
 flag_to_decompression_param_number(zstd_d_window_log_max) -> {ok, 100};
