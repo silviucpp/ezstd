@@ -38,11 +38,13 @@ struct ZSTDDCtxDeleter {
 struct ZstdCCtxWithBuffer {
     ZSTD_CCtx* cctx;
     ZSTD_outBuffer out;
+    ZSTD_CDict** dict;
 };
 
 struct ZstdDCtxWithBuffer {
     ZSTD_DCtx* dctx;
     ZSTD_outBuffer out;
+    ZSTD_DDict** dict;
 };
 
 void zstd_nif_compress_dictionary_destructor(ErlNifEnv *env, void *res) {
@@ -61,6 +63,9 @@ void zstd_nif_compression_context_destructor(ErlNifEnv *env, void *res) {
     UNUSED(env);
     ZstdCCtxWithBuffer* ctx_resource = static_cast<ZstdCCtxWithBuffer*>(res);
     ZSTD_freeCCtx(ctx_resource->cctx);
+    if (ctx_resource->dict != nullptr) {
+        enif_release_resource(ctx_resource->dict);
+    }
     enif_free(ctx_resource->out.dst);
 }
 
@@ -68,6 +73,9 @@ void zstd_nif_decompression_context_destructor(ErlNifEnv *env, void *res) {
     UNUSED(env);
     ZstdDCtxWithBuffer* ctx_resource = static_cast<ZstdDCtxWithBuffer*>(res);
     ZSTD_freeDCtx(ctx_resource->dctx);
+    if (ctx_resource->dict != nullptr) {
+        enif_release_resource(ctx_resource->dict);
+    }
     enif_free(ctx_resource->out.dst);
 }
 
@@ -197,6 +205,7 @@ static ERL_NIF_TERM zstd_nif_create_compression_context(ErlNifEnv* env, int argc
     resource->out.dst = buffer;
     resource->out.pos = 0;
     resource->out.size = out_buffer_size;
+    resource->dict = nullptr;
     
     ERL_NIF_TERM result = enif_make_resource(env, resource);
 
@@ -234,6 +243,7 @@ static ERL_NIF_TERM zstd_nif_create_decompression_context(ErlNifEnv* env, int ar
     resource->out.dst = buffer;
     resource->out.pos = 0;
     resource->out.size = out_buffer_size;
+    resource->dict = nullptr;
     
     ERL_NIF_TERM result = enif_make_resource(env, resource);
 
@@ -253,6 +263,12 @@ static ERL_NIF_TERM zstd_nif_select_cdict(ErlNifEnv* env, int argc, const ERL_NI
     }
 
     size_t result = ZSTD_CCtx_refCDict(ctx_resource->cctx, *dict_resource);
+    if (ctx_resource->dict != nullptr) {
+        // refCDict replaces the dictionary for this context, so we can't use the old one.
+        enif_release_resource(ctx_resource->dict);
+    }
+    ctx_resource->dict = dict_resource;
+    enif_keep_resource(dict_resource);
 
     if (ZSTD_isError(result)) {
         return make_error(env, "failed to set dictionary");
@@ -273,6 +289,13 @@ static ERL_NIF_TERM zstd_nif_select_ddict(ErlNifEnv* env, int argc, const ERL_NI
     }
 
     size_t result = ZSTD_DCtx_refDDict(ctx_resource->dctx, *dict_resource);
+    if (ctx_resource->dict != nullptr) {
+        // We do not support ZSTD_d_refMultipleDDicts so setting a new one means we no longer could want
+        // to use the old dictionary.
+        enif_release_resource(ctx_resource->dict);
+    }
+    ctx_resource->dict = dict_resource;
+    enif_keep_resource(dict_resource);
 
     if (ZSTD_isError(result)) {
         return make_error(env, "failed to set dictionary");
