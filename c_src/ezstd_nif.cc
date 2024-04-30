@@ -480,7 +480,7 @@ static ERL_NIF_TERM zstd_nif_compress_streaming_chunk(ErlNifEnv* env, int argc, 
 
     ZstdCCtxWithBuffer* ctx_resource;
     ErlNifBinary bin;
-    ulong offset;
+    unsigned long offset;
 
     if (!enif_get_resource(env, argv[0], COMPRESS_CONTEXT_RES_TYPE, reinterpret_cast<void**>(&ctx_resource)) ||
         !enif_inspect_binary(env, argv[1], &bin) ||
@@ -540,7 +540,7 @@ static ERL_NIF_TERM zstd_nif_decompress_streaming_chunk(ErlNifEnv* env, int argc
 
     ZstdDCtxWithBuffer* ctx_resource;
     ErlNifBinary bin;
-    ulong offset;
+    unsigned long offset;
 
     if (!enif_get_resource(env, argv[0], DECOMPRESS_CONTEXT_RES_TYPE, reinterpret_cast<void**>(&ctx_resource)) ||
         !enif_inspect_binary(env, argv[1], &bin) ||
