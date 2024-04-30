@@ -480,13 +480,17 @@ static ERL_NIF_TERM zstd_nif_compress_streaming_chunk(ErlNifEnv* env, int argc, 
 
     ZstdCCtxWithBuffer* ctx_resource;
     ErlNifBinary bin;
-    uint64_t offset;
+    ulong offset;
 
     if (!enif_get_resource(env, argv[0], COMPRESS_CONTEXT_RES_TYPE, reinterpret_cast<void**>(&ctx_resource)) ||
         !enif_inspect_binary(env, argv[1], &bin) ||
-        !enif_get_uint64(env, argv[3], &offset)) {
+        !enif_get_ulong(env, argv[3], &offset)) {
             return make_badarg(env);
         }
+
+    if (offset > SIZE_MAX) {
+        return make_badarg(env);
+    }
 
     ZSTD_EndDirective flush_type;
     if (enif_is_identical(argv[2], ATOMS.atomFlush)) {
@@ -536,13 +540,17 @@ static ERL_NIF_TERM zstd_nif_decompress_streaming_chunk(ErlNifEnv* env, int argc
 
     ZstdDCtxWithBuffer* ctx_resource;
     ErlNifBinary bin;
-    uint64_t offset;
+    ulong offset;
 
     if (!enif_get_resource(env, argv[0], DECOMPRESS_CONTEXT_RES_TYPE, reinterpret_cast<void**>(&ctx_resource)) ||
         !enif_inspect_binary(env, argv[1], &bin) ||
-        !enif_get_uint64(env, argv[2], &offset)) {
+        !enif_get_ulong(env, argv[2], &offset)) {
             return make_badarg(env);
         }
+
+    if (offset > SIZE_MAX) {
+        return make_badarg(env);
+    }
 
     ZSTD_inBuffer in_buffer;
     in_buffer.src = bin.data;
