@@ -18,7 +18,7 @@
     create_compression_context/1,
     select_cdict/2,
     set_compression_parameter/3,
-    compress_streaming_chunk/3,
+    compress_streaming_chunk/4,
     create_decompression_context/1,
     select_ddict/2,
     set_decompression_parameter/3,
@@ -80,7 +80,7 @@ select_cdict(_CCtx, _CDict) ->
 set_compression_parameter(_CCtx, _Param, _Value) ->
     ?NOT_LOADED.
 
-compress_streaming_chunk(_CCtx, _Binary, _Offset) ->
+compress_streaming_chunk(_CCtx, _Binary, _Offset, _FlushType) ->
     ?NOT_LOADED.
 
 create_decompression_context(_BufferSize) ->

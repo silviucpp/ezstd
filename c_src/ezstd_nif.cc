@@ -15,6 +15,8 @@ const char kAtomError[] = "error";
 const char kAtomBadArg[] = "badarg";
 const char kAtomOk[] = "ok";
 const char kAtomContinue[] = "continue";
+const char kAtomFlush[] = "flush";
+const char kAtomEnd[] = "zstdend";
 
 atoms ATOMS;
 
@@ -101,6 +103,8 @@ int on_nif_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
     ATOMS.atomBadArg = make_atom(env, kAtomBadArg);
     ATOMS.atomOk = make_atom(env, kAtomOk);
     ATOMS.atomContinue = make_atom(env, kAtomContinue);
+    ATOMS.atomFlush = make_atom(env, kAtomFlush);
+    ATOMS.atomEnd = make_atom(env, kAtomEnd);
     *priv_data = nullptr;
 
     ErlNifResourceFlags flags = ErlNifResourceFlags(ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER);
@@ -480,9 +484,18 @@ static ERL_NIF_TERM zstd_nif_compress_streaming_chunk(ErlNifEnv* env, int argc, 
 
     if (!enif_get_resource(env, argv[0], COMPRESS_CONTEXT_RES_TYPE, reinterpret_cast<void**>(&ctx_resource)) ||
         !enif_inspect_binary(env, argv[1], &bin) ||
-        !enif_get_uint64(env, argv[2], &offset)) {
+        !enif_get_uint64(env, argv[3], &offset)) {
             return make_badarg(env);
         }
+
+    ZSTD_EndDirective flush_type;
+    if (enif_is_identical(argv[2], ATOMS.atomFlush)) {
+        flush_type = ZSTD_e_flush;
+    } else if (enif_is_identical(argv[2], ATOMS.atomEnd)) {
+        flush_type = ZSTD_e_end;
+    } else {
+        return make_badarg(env);
+    }
 
     ZSTD_inBuffer in_buffer;
     in_buffer.src = bin.data;
@@ -495,7 +508,7 @@ static ERL_NIF_TERM zstd_nif_compress_streaming_chunk(ErlNifEnv* env, int argc, 
         ctx_resource->cctx,
         &ctx_resource->out,
         &in_buffer,
-        ZSTD_e_flush
+        flush_type
     );
 
     ERL_NIF_TERM result_chunk;
@@ -624,7 +637,7 @@ static ErlNifFunc nif_funcs[] = {
     {"select_ddict", 2, zstd_nif_select_ddict},
     {"set_compression_parameter", 3, zstd_nif_set_compression_parameter},
     {"set_decompression_parameter", 3, zstd_nif_set_decompression_parameter},
-    {"compress_streaming_chunk", 3, zstd_nif_compress_streaming_chunk},
+    {"compress_streaming_chunk", 4, zstd_nif_compress_streaming_chunk},
     {"decompress_streaming_chunk", 3, zstd_nif_decompress_streaming_chunk}
 };
 
