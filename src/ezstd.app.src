@@ -2,7 +2,7 @@
     {description,"zstd binding for erlang"},
     {licenses, ["MIT"]},
     {links,[{"GitHub","https://github.com/silviucpp/ezstd"}]},
-    {vsn, "1.0.9"},
+    {vsn, "1.1.0"},
     {registered, []},
     {applications, [
         kernel,

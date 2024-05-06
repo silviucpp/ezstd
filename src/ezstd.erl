@@ -5,7 +5,7 @@
 -module(ezstd).
 
 -export([
-    compress/1, 
+    compress/1,
     compress/2,
     decompress/1,
     create_cdict/2,
@@ -26,7 +26,7 @@
     decompress_streaming/2
 ]).
 
--type zstd_compression_flag() :: 'zstd_c_compression_level' 
+-type zstd_compression_flag() :: 'zstd_c_compression_level'
       | 'zstd_c_window_log'
       | 'zstd_c_hash_log'
       | 'zstd_c_chain_log'
@@ -43,7 +43,7 @@ create_cdict(Binary, CompressionLevel) ->
 
 -spec create_ddict(binary()) -> reference() | {error, any()}.
 create_ddict(Binary) ->
-    ezstd_nif:create_ddict(Binary). 
+    ezstd_nif:create_ddict(Binary).
 
 -spec compress_using_cdict(binary(), reference()) -> binary() | {error, any()}.
 compress_using_cdict(Binary, CCDict) ->
@@ -64,7 +64,6 @@ get_dict_id_from_ddict(DDict) ->
 -spec get_dict_id_from_cdict(reference()) -> integer().
 get_dict_id_from_cdict(CDict) ->
     returns_integers(ezstd_nif:get_dict_id_from_cdict(CDict)).
-
 
 %% @doc Compresses the given binary.
 -spec compress(binary()) -> binary() | {error, any()}.
@@ -97,9 +96,9 @@ select_cdict(Context, CDict) ->
 - spec set_compression_parameter(reference(), zstd_compression_flag(), integer()) -> ok | {error, any()}.
 set_compression_parameter(Context, Flag, Value) ->
     case flag_to_compression_param_number(Flag) of
-        {ok, Param} -> 
+        {ok, Param} ->
             ezstd_nif:set_compression_parameter(Context, Param, Value);
-        error -> 
+        error ->
             error
     end.
 
@@ -169,6 +168,8 @@ decompress_streaming_chunk(Context, Binary, Offset, Sofar, Attempts) ->
             Error
     end.
 
+% internals
+
 returns_integers(Value) ->
     % the _dict_id functions only return non-integers when
     % the preconditions are broken. ie: non-binary or non-reference
@@ -182,15 +183,26 @@ returns_integers(Value) ->
             error(Other)
     end.
 
-flag_to_compression_param_number(zstd_c_compression_level) -> {ok, 100};
-flag_to_compression_param_number(zstd_c_window_log) -> {ok, 101};
-flag_to_compression_param_number(zstd_c_hash_log) -> {ok, 102};
-flag_to_compression_param_number(zstd_c_chain_log) -> {ok, 103};
-flag_to_compression_param_number(zstd_c_search_log) -> {ok, 104};
-flag_to_compression_param_number(zstd_c_min_match) -> {ok, 105};
-flag_to_compression_param_number(zstd_c_target_length) -> {ok, 106};
-flag_to_compression_param_number(zstd_c_strategy) -> {ok, 107};
-flag_to_compression_param_number(_Other) -> {error, badarg}.
+flag_to_compression_param_number(zstd_c_compression_level) ->
+    {ok, 100};
+flag_to_compression_param_number(zstd_c_window_log) ->
+    {ok, 101};
+flag_to_compression_param_number(zstd_c_hash_log) ->
+    {ok, 102};
+flag_to_compression_param_number(zstd_c_chain_log) ->
+    {ok, 103};
+flag_to_compression_param_number(zstd_c_search_log) ->
+    {ok, 104};
+flag_to_compression_param_number(zstd_c_min_match) ->
+    {ok, 105};
+flag_to_compression_param_number(zstd_c_target_length) ->
+    {ok, 106};
+flag_to_compression_param_number(zstd_c_strategy) ->
+    {ok, 107};
+flag_to_compression_param_number(_Other) ->
+    {error, badarg}.
 
-flag_to_decompression_param_number(zstd_d_window_log_max) -> {ok, 100};
-flag_to_decompression_param_number(_Other) -> {error, badarg}.
+flag_to_decompression_param_number(zstd_d_window_log_max) ->
+    {ok, 100};
+flag_to_decompression_param_number(_Other) ->
+    {error, badarg}.
