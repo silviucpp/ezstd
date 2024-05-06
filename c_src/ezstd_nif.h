@@ -7,6 +7,11 @@ struct atoms
 {
     ERL_NIF_TERM atomError;
     ERL_NIF_TERM atomBadArg;
+    ERL_NIF_TERM atomOk;
+    ERL_NIF_TERM atomContinue;
+    ERL_NIF_TERM atomInvalidData;
+    ERL_NIF_TERM atomFlush;
+    ERL_NIF_TERM atomEnd;
 };
 
 extern atoms ATOMS;

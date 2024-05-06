@@ -14,8 +14,15 @@
     decompress_using_ddict/2,
     get_dict_id_from_cdict/1,
     get_dict_id_from_ddict/1,
-    get_dict_id_from_frame/1
-
+    get_dict_id_from_frame/1,
+    create_compression_context/1,
+    select_cdict/2,
+    set_compression_parameter/3,
+    compress_streaming_chunk/4,
+    create_decompression_context/1,
+    select_ddict/2,
+    set_decompression_parameter/3,
+    decompress_streaming_chunk/3
 ]).
 
 %% nif functions
@@ -62,4 +69,28 @@ get_dict_id_from_ddict(_DDict) ->
     ?NOT_LOADED.
 
 get_dict_id_from_frame(_Binary) ->
+    ?NOT_LOADED.
+
+create_compression_context(_BufferSize) ->
+    ?NOT_LOADED.
+
+select_cdict(_CCtx, _CDict) ->
+    ?NOT_LOADED.
+
+set_compression_parameter(_CCtx, _Param, _Value) ->
+    ?NOT_LOADED.
+
+compress_streaming_chunk(_CCtx, _Binary, _Offset, _FlushType) ->
+    ?NOT_LOADED.
+
+create_decompression_context(_BufferSize) ->
+    ?NOT_LOADED.
+
+select_ddict(_DCtx, _Ddict) ->
+    ?NOT_LOADED.
+
+set_decompression_parameter(_CCtx, _Param, _Value) ->
+    ?NOT_LOADED.
+
+decompress_streaming_chunk(_DCtx, _Binary, _Offset) ->
     ?NOT_LOADED.
