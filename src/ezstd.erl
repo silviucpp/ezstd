@@ -23,7 +23,9 @@
     create_decompression_context/1,
     set_decompression_parameter/3,
     select_ddict/2,
-    decompress_streaming/2
+    decompress_streaming/2,
+    reset_compression_context/2,
+    reset_decompression_context/2
 ]).
 
 -type zstd_compression_flag() :: 'zstd_c_compression_level'
@@ -36,6 +38,8 @@
       | 'zstd_c_strategy'.
 
 -type zstd_decompression_flag() :: 'zstd_d_window_log_max'.
+
+-type zstd_reset_directive() :: 'session_only' | 'parameters' | 'session_and_parameters'.
 
 -spec create_cdict(binary(), integer()) -> reference() | {error, any()}.
 create_cdict(Binary, CompressionLevel) ->
@@ -167,6 +171,32 @@ decompress_streaming_chunk(Context, Binary, Offset, Sofar, Attempts) ->
         Error ->
             Error
     end.
+
+%% @doc Resets the compression context to its initial state.
+%%
+%% The `ResetDirective' can be one of:
+%%
+%% - `session_only' - only resets the session state, keeping the parameters and dictionary.
+%%
+%% - `parameters' - only resets the parameters and dictionary, keeping the session state.
+%%
+%% - `session_and_parameters' - resets both the session state and the parameters (and dictionary).
+-spec reset_compression_context(reference(), zstd_reset_directive()) -> ok | {error, any()}.
+reset_compression_context(Context, ResetDirective) ->
+    ezstd_nif:reset_compression_context(Context, ResetDirective).
+
+%% @doc Resets the decompression context to its initial state.
+%%
+%% The `ResetDirective' can be one of:
+%%
+%% - `session_only' - only resets the session state, keeping the parameters and dictionary.
+%%
+%% - `parameters' - only resets the parameters and dictionary, keeping the session state.
+%%
+%% - `session_and_parameters' - resets both the session state and the parameters (and dictionary).
+-spec reset_decompression_context(reference(), zstd_reset_directive()) -> ok | {error, any()}.
+reset_decompression_context(Context, ResetDirective) ->
+    ezstd_nif:reset_decompression_context(Context, ResetDirective).
 
 % internals
 
