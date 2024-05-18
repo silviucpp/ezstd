@@ -17,6 +17,9 @@ const char kAtomOk[] = "ok";
 const char kAtomContinue[] = "continue";
 const char kAtomFlush[] = "flush";
 const char kAtomEnd[] = "zstdend";
+const char kAtomSessionOnly[] = "session_only";
+const char kAtomParameters[] = "parameters";
+const char kAtomSessionAndParameters[] = "session_and_parameters";
 
 atoms ATOMS;
 
@@ -114,6 +117,9 @@ int on_nif_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
     ATOMS.atomContinue = make_atom(env, kAtomContinue);
     ATOMS.atomFlush = make_atom(env, kAtomFlush);
     ATOMS.atomEnd = make_atom(env, kAtomEnd);
+    ATOMS.atomSessionOnly = make_atom(env, kAtomSessionOnly);
+    ATOMS.atomParameters = make_atom(env, kAtomParameters);
+    ATOMS.atomSessionAndParameters = make_atom(env, kAtomSessionAndParameters);
     *priv_data = nullptr;
 
     ErlNifResourceFlags flags = ErlNifResourceFlags(ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER);
@@ -253,6 +259,56 @@ static ERL_NIF_TERM zstd_nif_create_decompression_context(ErlNifEnv* env, int ar
 
     enif_release_resource(resource);
     return result;
+}
+
+static ERL_NIF_TERM zstd_nif_reset_compression_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UNUSED(argc);
+    ZstdCCtxWithBuffer* ctx_resource;
+
+    if(!enif_get_resource(env, argv[0], COMPRESS_CONTEXT_RES_TYPE, reinterpret_cast<void**>(&ctx_resource)))
+        return make_badarg(env);
+
+    size_t result = 0;
+
+    if(enif_is_identical(argv[1], ATOMS.atomSessionOnly))
+        result = ZSTD_CCtx_reset(ctx_resource->cctx, ZSTD_reset_session_only);
+    else if(enif_is_identical(argv[1], ATOMS.atomParameters))
+        result = ZSTD_CCtx_reset(ctx_resource->cctx, ZSTD_reset_parameters);
+    else if(enif_is_identical(argv[1], ATOMS.atomSessionAndParameters))
+        result = ZSTD_CCtx_reset(ctx_resource->cctx, ZSTD_reset_session_and_parameters);
+    else
+        return make_badarg(env);
+
+    if (ZSTD_isError(result))
+        return make_error(env, "failed to reset context");
+
+    return ATOMS.atomOk;
+}
+
+static ERL_NIF_TERM zstd_nif_reset_decompression_context(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UNUSED(argc);
+    ZstdDCtxWithBuffer* ctx_resource;
+
+    if(!enif_get_resource(env, argv[0], DECOMPRESS_CONTEXT_RES_TYPE, reinterpret_cast<void**>(&ctx_resource)))
+        return make_badarg(env);
+
+    size_t result = 0;
+
+    if(enif_is_identical(argv[1], ATOMS.atomSessionOnly))
+        result = ZSTD_DCtx_reset(ctx_resource->dctx, ZSTD_reset_session_only);
+    else if(enif_is_identical(argv[1], ATOMS.atomParameters))
+        result = ZSTD_DCtx_reset(ctx_resource->dctx, ZSTD_reset_parameters);
+    else if(enif_is_identical(argv[1], ATOMS.atomSessionAndParameters))
+        result = ZSTD_DCtx_reset(ctx_resource->dctx, ZSTD_reset_session_and_parameters);
+    else
+        return make_badarg(env);
+
+    if (ZSTD_isError(result))
+        return make_error(env, "failed to reset context");
+
+    return ATOMS.atomOk;
 }
 
 static ERL_NIF_TERM zstd_nif_select_cdict(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -623,7 +679,9 @@ static ErlNifFunc nif_funcs[] = {
     {"set_compression_parameter", 3, zstd_nif_set_compression_parameter},
     {"set_decompression_parameter", 3, zstd_nif_set_decompression_parameter},
     {"compress_streaming_chunk", 4, zstd_nif_compress_streaming_chunk},
-    {"decompress_streaming_chunk", 3, zstd_nif_decompress_streaming_chunk}
+    {"decompress_streaming_chunk", 3, zstd_nif_decompress_streaming_chunk},
+    {"reset_compression_context", 2, zstd_nif_reset_compression_context},
+    {"reset_decompression_context", 2, zstd_nif_reset_decompression_context}
 };
 
 ERL_NIF_INIT(ezstd_nif, nif_funcs, on_nif_load, NULL, NULL, on_nif_unload);

@@ -12,6 +12,9 @@ struct atoms
     ERL_NIF_TERM atomInvalidData;
     ERL_NIF_TERM atomFlush;
     ERL_NIF_TERM atomEnd;
+    ERL_NIF_TERM atomSessionOnly;
+    ERL_NIF_TERM atomParameters;
+    ERL_NIF_TERM atomSessionAndParameters;
 };
 
 extern atoms ATOMS;
