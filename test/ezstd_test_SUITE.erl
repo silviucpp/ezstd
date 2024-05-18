@@ -9,7 +9,10 @@ all() -> [
     roundtrip_content_using_real_dictionary_test,
     roundtrip_normal_compression_test,
     roundtrip_with_streaming_compress_test,
-    roundtrip_streaming_full_frame
+    roundtrip_streaming_full_frame,
+    reset_context_test_a,
+    reset_context_test_b,
+    reset_context_real_dictionary_test
 ].
 
 roundtrip_normal_compression_test(_) ->
@@ -84,6 +87,86 @@ roundtrip_streaming_full_frame(_) ->
   RehydratedIOList = ezstd:decompress_using_ddict(CompressedBinary, DDict),
   RehydratedBinary = erlang:iolist_to_binary(RehydratedIOList),
   ?assertEqual(Plaintext, RehydratedBinary).
+
+reset_context_test_a(_) ->
+  % Create a compression context and compress a string
+  CompressCtx = ezstd:create_compression_context(1024),
+  CompressedA = ezstd:compress_streaming(CompressCtx, <<"content">>),
+
+  % Reset the compression context (and the dictionary)
+  ?assertEqual(ok, ezstd:reset_compression_context(CompressCtx, session_and_parameters)),
+
+  % Compress the same string with the reset context
+  CompressedB = ezstd:compress_streaming(CompressCtx, <<"content">>),
+
+  % The compressed strings should be the same
+  ?assertEqual(CompressedA, CompressedB).
+  
+reset_context_test_b(_) ->
+  % Create a compression and decompression context
+  CompressCtx = ezstd:create_compression_context(1024),
+  DecompressCtx = ezstd:create_decompression_context(1024),
+
+  % Compress a string and decompress it
+  CompressedA = ezstd:compress_streaming(CompressCtx, <<"content">>),
+  DecompressedA = ezstd:decompress_streaming(DecompressCtx, erlang:iolist_to_binary(CompressedA)),
+
+  % The decompressed string should be the same as the original
+  ?assertEqual(<<"content">>, erlang:iolist_to_binary(DecompressedA)),
+
+  % Reset the decompression context
+  ?assertEqual(ok, ezstd:reset_decompression_context(DecompressCtx, session_and_parameters)),
+
+  % Compress the same string using the non-reset compression context
+  CompressedB = ezstd:compress_streaming(CompressCtx, <<"content">>),
+
+  % Attempt to decompress
+  AttemptDecompress = ezstd:decompress_streaming(DecompressCtx, erlang:iolist_to_binary(CompressedB)),
+
+  % Expect failure because the decompression context was reset
+  ?assertEqual({error, <<"corrupted data">>}, AttemptDecompress).
+
+reset_context_real_dictionary_test(_) ->
+    % Create a new compression and decompression dictionary
+    Dict = real_dictionary(),
+    CDict = ezstd:create_cdict(Dict, 10),
+    DDict = ezstd:create_ddict(Dict),
+
+    % Create a compression context and use the created dictionary
+    CompressCtx = ezstd:create_compression_context(10),
+    ?assertEqual(ok, ezstd:select_cdict(CompressCtx, CDict)),
+
+    % Create a decompression context and use the created dictionary
+    DecompressCtx = ezstd:create_decompression_context(10),
+    ?assertEqual(ok, ezstd:select_ddict(DecompressCtx, DDict)),
+
+    % Compress and decompress some data
+    Compressed = ezstd:compress_streaming(CompressCtx, <<"contentcontentcontent">>),
+    Decompressed = ezstd:decompress_streaming(DecompressCtx, erlang:iolist_to_binary(Compressed)),
+
+    % Validate the success of the compress/decompress operation
+    ?assertEqual(<<"contentcontentcontent">>, erlang:iolist_to_binary(Decompressed)),
+
+    % Reset the decompressor, wiping the session, parameters and dictionary
+    ?assertEqual(ok, ezstd:reset_decompression_context(DecompressCtx, session_and_parameters)),
+
+    % Try to decompress the same compressed value from earlier, this should
+    % fail as we don't have the same dictionary
+    ShouldFailDecompress = ezstd:decompress_streaming(DecompressCtx, erlang:iolist_to_binary(Compressed)),
+
+    ?assertEqual({error, <<"corrupted data">>}, ShouldFailDecompress),
+
+    % Reset the decompressor again but this time select a newly created dictionary
+    % with the same value as earlier
+    ?assertEqual(ok, ezstd:reset_decompression_context(DecompressCtx, session_and_parameters)),
+
+    NewDDict = ezstd:create_ddict(Dict),
+    ezstd:select_ddict(DecompressCtx, NewDDict),
+
+    % Attempt the decompression again with the initial compressed blob, expecting success
+    AttemptDecompress = ezstd:decompress_streaming(DecompressCtx, erlang:iolist_to_binary(Compressed)),
+
+    ?assertEqual(<<"contentcontentcontent">>, erlang:iolist_to_binary(AttemptDecompress)).
 
 % internals
 
