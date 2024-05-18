@@ -22,7 +22,9 @@
     create_decompression_context/1,
     select_ddict/2,
     set_decompression_parameter/3,
-    decompress_streaming_chunk/3
+    decompress_streaming_chunk/3,
+    reset_compression_context/2,
+    reset_decompression_context/2
 ]).
 
 %% nif functions
@@ -93,4 +95,10 @@ set_decompression_parameter(_CCtx, _Param, _Value) ->
     ?NOT_LOADED.
 
 decompress_streaming_chunk(_DCtx, _Binary, _Offset) ->
+    ?NOT_LOADED.
+
+reset_compression_context(_CCtx, _ResetDirective) ->
+    ?NOT_LOADED.
+
+reset_decompression_context(_DCtx, _ResetDirective) ->
     ?NOT_LOADED.
