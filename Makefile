@@ -9,6 +9,10 @@ compile_nif: get_deps
 clean_nif:
 	@make -C c_src clean
 
+clean_zstd: clean_nif
+	@make -C _build/deps/zstd clean
+	@cd _build/deps/zstd && git reset --hard
+
 compile:
 	${REBAR} compile
 
