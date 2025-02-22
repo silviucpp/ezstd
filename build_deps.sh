@@ -11,7 +11,7 @@ CPUS=`getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu`
 ZSTD_DESTINATION=zstd
 ZSTD_REPO=https://github.com/facebook/zstd.git
 ZSTD_BRANCH=release
-ZSTD_TAG=v1.5.5
+ZSTD_TAG=v1.5.6
 ZSTD_SUCCESS=lib/libzstd.a
 
 fail_check()
@@ -52,14 +52,23 @@ CheckoutLib()
 
 BuildLibrary()
 {
-    case $OS in
-        Linux)
-            export CFLAGS="-fPIC"
-            export CXXFLAGS="-fPIC"
-            ;;
-        *)
-            ;;
-    esac
+    if [ -z "$NO_CMAKE" ] && command -v cmake >/dev/null 2>&1; then
+        echo "Using cmake build system..."
+        cmake -S build/cmake
+    else
+        echo "cmake not found, using make directly..."
+        # Only define -O2 if CFLAGS is not already defined
+        export CFLAGS=${CFLAGS:-"-O2"}
+
+        case $OS in
+            Linux)
+                export CFLAGS="$CFLAGS -fPIC"
+                export CXXFLAGS="$CXXFLAGS -fPIC"
+                ;;
+            *)
+                ;;
+        esac
+    fi
 
     fail_check make -j $CPUS
     rm -rf lib/*.so
