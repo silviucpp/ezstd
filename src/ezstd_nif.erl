@@ -30,9 +30,7 @@
 %% nif functions
 
 load_nif() ->
-    SoName = get_priv_path(?MODULE),
-    logger:debug(<<"Loading library: ~p ~n">>, [SoName]),
-    ok = erlang:load_nif(SoName, 0).
+    ok = erlang:load_nif(get_priv_path(?MODULE), 0).
 
 get_priv_path(File) ->
     case code:priv_dir(ezstd) of
