@@ -6,7 +6,7 @@
 
 ## [Zstd][1] binding for Erlang
 
-This binding is based on zstd v1.5.6. In case you want to modify the `zstd` version you can change `ZSTD_TAG` from `build_deps.sh`
+This binding is based on zstd v1.5.7. In case you want to modify the `zstd` version you can change `ZSTD_TAG` from `build_deps.sh`
 
 ## API
 
@@ -35,4 +35,4 @@ Plaintext = ezstd:decompress_using_ddict(ContentCompressed, DDict).
 rebar3 ct
 ```
 
-[1]:http://facebook.github.io/zstd/
+[1]: http://facebook.github.io/zstd/
