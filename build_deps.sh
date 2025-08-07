@@ -1,79 +1,87 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-ROOT=$(pwd)
-DEPS_LOCATION=_build/deps
-OS=$(uname -s)
-KERNEL=$(echo $(lsb_release -ds 2>/dev/null || cat /etc/*release 2>/dev/null | head -n1 | awk '{print $1;}') | awk '{print $1;}')
-CPUS=`getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu`
+ROOT="$(pwd)"
+DEPS_DIR="_build/deps"
+OS="$(uname -s)"
+KERNEL="$(lsb_release -is 2>/dev/null || grep -m1 '^NAME=' /etc/*release | cut -d= -f2 | awk '{print $1}' | tr -d '"')"
+CPUS="$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)"
 
+# Zstandard configuration
 # https://github.com/facebook/zstd.git
 
-ZSTD_DESTINATION=zstd
-ZSTD_REPO=https://github.com/facebook/zstd.git
-ZSTD_BRANCH=release
-ZSTD_TAG=v1.5.7
-ZSTD_SUCCESS=lib/libzstd.a
+ZSTD_REPO="https://github.com/facebook/zstd.git"
+ZSTD_BRANCH="release"
+ZSTD_TAG="v1.5.7"
+ZSTD_DIR="zstd"
+ZSTD_SUCCESS_FILE="lib/libzstd.a"
 
-fail_check()
-{
+fail_check() {
     "$@"
     local status=$?
     if [ $status -ne 0 ]; then
-        echo "error with $1" >&2
-        exit 1
+        echo "❌ Error running command: $*" >&2
+        exit $status
     fi
 }
 
-CheckoutLib()
-{
-    if [ -f "$DEPS_LOCATION/$4/$5" ]; then
-        echo "$4 fork already exist. delete $DEPS_LOCATION/$4 for a fresh checkout ..."
+checkout_lib() {
+    local repo_url="$1"
+    local tag="$2"
+    local branch="$3"
+    local dir_name="$4"
+    local success_file="$5"
+
+    local full_path="$DEPS_DIR/$dir_name/$success_file"
+    if [ -f "$full_path" ]; then
+        echo "✅ $dir_name already exists at $full_path"
+        echo "   To rebuild, delete: $DEPS_DIR/$dir_name"
+        return
+    fi
+
+    echo "📦 Cloning $repo_url (branch: $branch, tag: $tag)"
+
+    mkdir -p "$DEPS_DIR"
+    pushd "$DEPS_DIR" > /dev/null
+
+    if [ ! -d "$dir_name" ]; then
+        fail_check git clone --branch "$branch" "$repo_url" "$dir_name"
+    fi
+
+    pushd "$dir_name" > /dev/null
+    fail_check git checkout "$tag"
+    build_library "$dir_name"
+    popd > /dev/null
+    popd > /dev/null
+}
+
+build_library() {
+    local dir="$1"
+    echo "🔧 Building $dir"
+
+    if [[ -z "${NO_CMAKE:-}" ]] && command -v cmake >/dev/null 2>&1; then
+        echo "   ➤ Using CMake..."
+        cmake -S build/cmake -DZSTD_BUILD_PROGRAMS=OFF -DZSTD_LEGACY_SUPPORT=OFF
+        fail_check make libzstd_static -j "$CPUS"
     else
-        #repo rev branch destination
+        echo "   ➤ Using Make directly..."
+        export CFLAGS="${CFLAGS:--O2}"
 
-        echo "repo=$1 tag=$2 branch=$3"
-
-        mkdir -p $DEPS_LOCATION
-        pushd $DEPS_LOCATION
-
-        if [ ! -d "$4" ]; then
-            fail_check git clone -b $3 $1 $4
+        if [[ "$OS" == "Linux" ]]; then
+            export CFLAGS="$CFLAGS -fPIC"
+            export CXXFLAGS="${CXXFLAGS:-} -fPIC"
         fi
 
-        pushd $4
-        fail_check git checkout $2
-        BuildLibrary $4
-        popd
-        popd
+        fail_check make lib-release -j "$CPUS"
 
-
+        # Remove shared libs to ensure a static-only build
+        rm -f lib/*.so lib/*.so.* lib/*.dylib
     fi
 }
 
-BuildLibrary()
-{
-    if [ -z "$NO_CMAKE" ] && command -v cmake >/dev/null 2>&1; then
-        echo "Using cmake build system..."
-        cmake -S build/cmake -DZSTD_BUILD_PROGRAMS=OFF -DZSTD_LEGACY_SUPPORT=OFF
-        fail_check make libzstd_static -j $CPUS
-    else
-        echo "cmake not found, using make directly..."
-        # Only define -O2 if CFLAGS is not already defined
-        export CFLAGS=${CFLAGS:-"-O2"}
+echo "🖥️  Detected system configuration:"
+echo "   ➤ OS Type   : $OS"
+echo "   ➤ OS Name   : $KERNEL"
+echo "   ➤ CPU Cores : $CPUS"
 
-        case $OS in
-            Linux)
-                export CFLAGS="$CFLAGS -fPIC"
-                export CXXFLAGS="$CXXFLAGS -fPIC"
-                ;;
-            *)
-                ;;
-        esac
-        fail_check make lib-release -j $CPUS
-        rm -rf lib/*.so
-        rm -rf lib/*.so.*
-        rm -rf lib/*.dylib
-    fi
-}
-
-CheckoutLib $ZSTD_REPO $ZSTD_TAG $ZSTD_BRANCH $ZSTD_DESTINATION $ZSTD_SUCCESS
+checkout_lib "$ZSTD_REPO" "$ZSTD_TAG" "$ZSTD_BRANCH" "$ZSTD_DIR" "$ZSTD_SUCCESS_FILE"
