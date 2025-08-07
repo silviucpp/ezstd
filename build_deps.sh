@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(pwd)"
 DEPS_DIR="_build/deps"
 OS="$(uname -s)"
-KERNEL="$(lsb_release -is 2>/dev/null || grep -m1 '^NAME=' /etc/*release | cut -d= -f2 | awk '{print $1}' | tr -d '"')"
+KERNEL=$(echo $(lsb_release -ds 2>/dev/null || cat /etc/*release 2>/dev/null | head -n1 | awk '{print $1;}') | awk '{print $1;}')
 CPUS="$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)"
 
 # Zstandard configuration
