@@ -54,7 +54,8 @@ BuildLibrary()
 {
     if [ -z "$NO_CMAKE" ] && command -v cmake >/dev/null 2>&1; then
         echo "Using cmake build system..."
-        cmake -S build/cmake
+        cmake -S build/cmake -DZSTD_BUILD_PROGRAMS=OFF -DZSTD_LEGACY_SUPPORT=OFF
+        fail_check make libzstd_static -j $CPUS
     else
         echo "cmake not found, using make directly..."
         # Only define -O2 if CFLAGS is not already defined
@@ -68,12 +69,11 @@ BuildLibrary()
             *)
                 ;;
         esac
+        fail_check make lib-release -j $CPUS
+        rm -rf lib/*.so
+        rm -rf lib/*.so.*
+        rm -rf lib/*.dylib
     fi
-
-    fail_check make -j $CPUS
-    rm -rf lib/*.so
-    rm -rf lib/*.so.*
-    rm -rf lib/*.dylib
 }
 
 CheckoutLib $ZSTD_REPO $ZSTD_TAG $ZSTD_BRANCH $ZSTD_DESTINATION $ZSTD_SUCCESS
