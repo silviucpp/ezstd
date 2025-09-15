@@ -6,6 +6,7 @@
 
 all() -> [
     roundtrip_content_dictionary_test,
+    decompress_no_header_test,
     roundtrip_content_using_real_dictionary_test,
     roundtrip_normal_compression_test,
     roundtrip_with_streaming_compress_test,
@@ -19,6 +20,11 @@ roundtrip_normal_compression_test(_) ->
   Plaintext = <<"contentcontentcontentcontent">>,
   Compressed = ezstd:compress(Plaintext, 1),
   ?assertEqual(Plaintext, ezstd:decompress(Compressed)).
+
+decompress_no_header_test(_) ->
+    Compressed = base64:decode(<<"KLUv/QBYzQYAoo0rIVCJ25iYa9k0Eff5BErDHKZm2nuLIlQV+F+zBUKOquH2GgtJi+Dn0o/LIr2Qj9Y1x8iP4pz80QyxoqwI/UMcG9trrpuD6I6yjGF7mvaE9vAjEktiobn07UeHGI6TA7kIUArVaBx0hYBS6XBQAAaGWZbEIDSXMn+NAvgdOVtu6A9+y9Bc2s6uQYTGBtm835ETaC6NPLP2nLtLsR2aS9uz/dEhmpkYNDGaSyHWzEQhDwBBHY5rAz8ZhZy5G85RhU4mmDvADoIaw+a0rS7Uc9w+x+Xn5F3uCw==">>),
+    Decompressed = ezstd:decompress(Compressed),
+    ?assertEqual(true, is_binary(Decompressed)).
 
 roundtrip_content_dictionary_test(_) ->
   Dict = <<"content-dict">>,
@@ -54,10 +60,10 @@ roundtrip_with_streaming_compress_test(_) ->
   ?assertEqual(ok, ezstd:set_compression_parameter(CContext, zstd_c_compression_level, 5)),
   ?assertEqual(ok, ezstd:set_compression_parameter(CContext, zstd_c_window_log, 12)),
   Plaintext = <<"contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent">>,
- 
+
   CompressedIOList = ezstd:compress_streaming(CContext, Plaintext),
   CompressedBinary = erlang:iolist_to_binary(CompressedIOList),
-  
+
   DContext = ezstd:create_decompression_context(10),
   ?assertEqual(ok, ezstd:select_ddict(DContext, DDict)),
   ?assertEqual(ok, ezstd:set_decompression_parameter(DContext, zstd_d_window_log_max, 15)),
@@ -101,7 +107,7 @@ reset_context_test_a(_) ->
 
   % The compressed strings should be the same
   ?assertEqual(CompressedA, CompressedB).
-  
+
 reset_context_test_b(_) ->
   % Create a compression and decompression context
   CompressCtx = ezstd:create_compression_context(1024),

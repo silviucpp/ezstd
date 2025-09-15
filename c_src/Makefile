@@ -21,7 +21,8 @@ ifeq ($(UNAME_SYS), darwin)
                 -Wl,-U,_enif_get_int \
                 -Wl,-U,_enif_get_ulong \
                 -Wl,-U,_enif_is_identical \
-                -Wl,-U,_enif_keep_resource
+                -Wl,-U,_enif_keep_resource \
+                -Wl,-U,_enif_make_sub_binary
 endif
 
 CXXFLAGS += -DNDEBUG \
