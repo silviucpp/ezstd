@@ -152,9 +152,8 @@ set_decompression_parameter(Context, Flag, Value) ->
             error
     end.
 
-%% @doc Compress some data without closing out the compression frame. This
-%% is intended to be used by a streaming decompressor which receives the same
-%% data in the same order.
+%% @doc Feed more compressed data to the decompressor, updating its internal state
+%% and returning data decompressed so far.
 -spec decompress_streaming(reference(), binary()) -> iolist() | {error, any()}.
 decompress_streaming(Context, Binary) ->
     decompress_streaming_chunk(Context, Binary, 0, [], 1000).
