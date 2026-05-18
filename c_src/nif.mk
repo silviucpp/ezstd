@@ -16,7 +16,7 @@ C_SRC_OUTPUT ?= $(PRIV_DIR)/$(PROJECT_NIF_NAME).so
 
 #regenerate all the time the env.mk
 ifneq ($(wildcard $(C_SRC_DIR)),)
-	GEN_ENV ?= $(shell erl -noshell -s init stop -eval "file:write_file(\"$(C_SRC_ENV)\", \
+	GEN_ENV ?= $(shell erl -noshell -eval "file:write_file(\"$(C_SRC_ENV)\", \
 		io_lib:format( \
 			\"ERTS_INCLUDE_DIR ?= ~s/erts-~s/include/~n\" \
 			\"ERL_INTERFACE_INCLUDE_DIR ?= ~s~n\" \
