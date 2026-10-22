@@ -433,8 +433,13 @@ static ERL_NIF_TERM zstd_nif_decompress_using_ddict(ErlNifEnv* env, int argc, co
     if (uncompressed_size == ZSTD_CONTENTSIZE_ERROR)
         return make_error(env, "failed to decompress: ZSTD_CONTENTSIZE_ERROR");
 
+    if (uncompressed_size > MAX_BUFFER_SIZE)
+        return make_error(env, "frame too large or invalid");
+
     ERL_NIF_TERM out_term;
     uint8_t *destination_buffer = enif_make_new_binary(env, uncompressed_size, &out_term);
+    if (!destination_buffer)
+        return make_error(env, "memory allocation failed");
 
     size_t actual_decompressed_size = ZSTD_decompress_usingDDict(ctx.get(), destination_buffer, uncompressed_size, bin.data, bin.size, *dict_resource);
 
