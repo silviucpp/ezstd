@@ -1,0 +1,8 @@
+%% The NIF is a .so on Linux and macOS and a .dll on Windows; `artifacts` in rebar.config
+%% is a plain list, so the Windows name is substituted here.
+case os:type() of
+    {win32, _} ->
+        lists:keyreplace(artifacts, 1, CONFIG, {artifacts, ["priv/ezstd_nif.dll"]});
+    _ ->
+        CONFIG
+end.

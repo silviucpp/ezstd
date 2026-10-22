@@ -33,6 +33,14 @@ ContentCompressed = ezstd:compress_using_cdict(Plaintext, CDict),
 Plaintext = ezstd:decompress_using_ddict(ContentCompressed, DDict).
 ```
 
+## Building on Windows
+
+Linux and macOS build the NIF with `make`. Windows builds it with [Zig](https://ziglang.org/download/),
+which brings its own C/C++ compiler and Windows headers, so `zig` on the `PATH` is the only
+requirement (no Visual Studio, no MSYS2). `rebar.config` runs `build_win32.ps1` as the
+Windows compile hook; it fetches zstd at the same pinned commit and produces
+`priv/ezstd_nif.dll`.
+
 ## Running tests
 
 ```sh

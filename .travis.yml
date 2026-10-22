@@ -1,4 +1,3 @@
-
 language: erlang
 
 matrix:
@@ -15,6 +14,21 @@ matrix:
     - os: linux
       dist: noble
       otp_release: 26.1.1
+
+    # Windows has no Erlang language support on Travis, so the job is a shell job that
+    # installs Erlang and Zig from Chocolatey. Zig is what build_win32.ps1 compiles the
+    # NIF with; nothing else is needed.
+    - os: windows
+      language: shell
+      before_install:
+        - choco install -y --no-progress erlang zig
+        - export PATH="$PATH:$(ls -d '/c/Program Files/Erlang OTP'* '/c/Program Files/erl'* 2>/dev/null | head -1)/bin"
+        - erl -noshell -eval 'io:format("~s~n",[erlang:system_info(system_architecture)]),halt().'
+        - zig version
+      script:
+        - ./rebar3 compile
+        - ./rebar3 ct
+      after_success: true
 
 before_script:
 
