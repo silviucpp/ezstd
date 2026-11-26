@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [ -n "${EZSTD_SYSTEM_LDFLAGS-}" ]; then
+    echo "🏡 Using system $EZSTD_SYSTEM_LDFLAGS ${EZSTD_SYSTEM_CFLAGS-}"
+    exit 0
+fi
+
 ROOT="$(pwd)"
 DEPS_DIR="_build/deps"
 OS="$(uname -s)"
