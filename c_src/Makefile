@@ -26,10 +26,12 @@ ifeq ($(UNAME_SYS), darwin)
 endif
 
 CXXFLAGS += -DNDEBUG \
-			-I$(BASEDIR)/_build/deps/zstd/lib \
+			$(if $(EZSTD_SYSTEM_LDFLAGS),$(EZSTD_SYSTEM_CPPFLAGS), \
+			-I$(BASEDIR)/_build/deps/zstd/lib) \
 			-g -Wextra -Werror -Wno-missing-field-initializers -fno-exceptions -fno-rtti -std=c++11
 
-LDFLAGS  += -L$(BASEDIR)/_build/deps/zstd/lib \
-			-lzstd \
+LDFLAGS  += $(if $(EZSTD_SYSTEM_LDFLAGS),$(EZSTD_SYSTEM_LDFLAGS), \
+			-L$(BASEDIR)/_build/deps/zstd/lib \
+			-lzstd) \
 			-lstdc++
 
